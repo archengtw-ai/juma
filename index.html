@@ -6,24 +6,31 @@
     <title>誰是音感王 - Whitney Houston 挑戰</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background: #eceff1; display: flex; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 550px; margin-bottom: 20px; border-top: 6px solid #007bff; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 550px; margin-bottom: 20px; border-top: 6px solid #007bff; text-align: center; }
         h1 { color: #1a237e; margin-bottom: 10px; }
         h2 { color: #333; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 0; }
+        
+        /* 專輯封面樣式 */
+        .album-art { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); margin: 15px 0; }
+        
         .hidden { display: none; }
-        .input-group { margin: 15px 0; font-size: 1.1em; color: #555; }
+        .input-group { margin: 15px 0; font-size: 1.1em; color: #555; text-align: left; }
+        .setup-controls { display: flex; flex-direction: column; align-items: center; }
+        
         input { width: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; text-align: center; }
         button { padding: 12px 24px; cursor: pointer; border-radius: 8px; border: none; background: #007bff; color: white; font-size: 16px; transition: all 0.2s; font-weight: bold; }
         button:hover { background: #0056b3; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
+        
         #gameArea { text-align: center; }
         .player-btn { background: #28a745; width: 100%; font-size: 28px; padding: 40px; margin: 20px 0; box-shadow: 0 5px 15px rgba(40,167,69,0.3); }
         .player-btn:hover { background: #218838; }
-        .hint { color: #666; font-size: 0.9em; margin-top: 10px; background: #fff3cd; padding: 8px; border-radius: 5px; }
+        
+        .hint { color: #666; font-size: 0.9em; margin-top: 10px; background: #fff3cd; padding: 8px; border-radius: 5px; text-align: left; }
         table { width: 100%; border-collapse: collapse; margin-top: 25px; background: #fff; }
         th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
         th { background: #f8f9fa; color: #333; }
         .best { background-color: #d4edda; font-weight: bold; color: #155724; }
-        #videoPlayer { width: 0; height: 0; opacity: 0; position: absolute; } /* 完全隱藏畫面 */
+        #videoPlayer { width: 0; height: 0; opacity: 0; position: absolute; }
     </style>
 </head>
 <body>
@@ -34,19 +41,25 @@
     <div id="setupPage" class="card">
         <h2>遊戲設定</h2>
         <p>🎵 指定曲目：I Will Always Love You</p>
+        
+        <!-- 專輯照片位置 -->
+        <img src="https://m.media-amazon.com/images/I/51N9N0x0iqL._SY300_SX300_QL70_FMwebp_.jpg" alt="Album Cover" class="album-art">
+        
         <video id="videoPlayer" src="gamemusic.mp4" preload="auto"></video>
         
-        <div class="input-group">
-            <button onclick="testMusic()">即時試聽 (播放/暫停)</button>
-            <p id="currentTimeDisplay" style="font-weight: bold; color: #d32f2f;">目前偵測秒數：0.00 秒</p>
-        </div>
-        
-        <div class="input-group">
-            目標音秒數：<input type="number" id="targetSec" value="12" step="0.1" min="0"> 秒
-        </div>
-        
-        <div class="input-group">
-            玩家人數：<input type="number" id="playerCount" value="3" min="1"> 人
+        <div class="setup-controls">
+            <div class="input-group">
+                <button onclick="testMusic()">即時試聽 (播放/暫停)</button>
+                <span id="currentTimeDisplay" style="font-weight: bold; color: #d32f2f; margin-left: 10px;">0.00 秒</span>
+            </div>
+            
+            <div class="input-group">
+                目標音秒數：<input type="number" id="targetSec" value="12" step="0.1" min="0"> 秒
+            </div>
+            
+            <div class="input-group">
+                玩家人數：<input type="number" id="playerCount" value="3" min="1"> 人
+            </div>
         </div>
         
         <button onclick="startGame()" style="width:100%; margin-top:10px; background: #1a237e;">開始比賽</button>
@@ -56,10 +69,14 @@
     <!-- 比賽頁面 -->
     <div id="gamePage" class="card hidden">
         <h2 id="turnTitle">準備開始</h2>
+        
+        <!-- 比賽中也顯示照片，增加氣氛 -->
+        <img src="https://m.media-amazon.com/images/I/51N9N0x0iqL._SY300_SX300_QL70_FMwebp_.jpg" alt="Album Cover" class="album-art">
+
         <div id="gameArea">
             <p style="font-size: 1.2em;">音樂播放中... 請聽出目標音！</p>
             <button id="hitBtn" class="player-btn" onclick="playerHit()">按下去！</button>
-            <p class="hint">⌨️ 您也可以直接按下鍵盤 <b>「空白鍵 (Space)」</b> 進行挑戰</p>
+            <p class="hint" style="text-align: center;">⌨️ 您也可以直接按下鍵盤 <b>「空白鍵 (Space)」</b></p>
         </div>
         
         <table id="resultTable">
@@ -84,19 +101,15 @@
         let currentPlayer = 1;
         let isGameOver = false;
 
-        // 監聽空白鍵
         document.addEventListener('keydown', function(event) {
             if (event.code === "Space") {
-                // 防止網頁捲動
                 event.preventDefault(); 
-                // 如果目前在比賽頁面，且按鈕沒被隱藏，就觸發點擊
                 if (!gamePage.classList.contains('hidden') && !isGameOver) {
                     playerHit();
                 }
             }
         });
 
-        // 試聽與即時秒數紀錄
         function testMusic() {
             if (video.paused) {
                 video.play();
@@ -108,12 +121,11 @@
 
         function updateTime() {
             if (!video.paused) {
-                document.getElementById('currentTimeDisplay').innerText = `目前偵測秒數：${video.currentTime.toFixed(2)} 秒`;
+                document.getElementById('currentTimeDisplay').innerText = `${video.currentTime.toFixed(2)} 秒`;
                 requestAnimationFrame(updateTime);
             }
         }
 
-        // 開始比賽
         function startGame() {
             document.getElementById('setupPage').classList.add('hidden');
             gamePage.classList.remove('hidden');
@@ -129,7 +141,6 @@
         }
 
         function playerHit() {
-            // 防止重複點擊（在切換期間）
             if (video.paused && results.length >= currentPlayer) return;
 
             const hitTime = video.currentTime;
@@ -156,8 +167,6 @@
         function updateLeaderboard() {
             const tbody = document.getElementById('resultBody');
             tbody.innerHTML = '';
-            
-            // 複製一份來排序，決定名次
             const sortedResults = [...results].sort((a, b) => a.diff - b.diff);
             
             results.forEach((res) => {
@@ -178,7 +187,6 @@
             document.getElementById('hitBtn').classList.add('hidden');
             document.getElementById('resetBtn').classList.remove('hidden');
             video.pause();
-            alert("所有玩家皆已完成，快來看看誰是音感王！");
         }
     </script>
 </body>
