@@ -30,7 +30,7 @@
             border-radius: 15px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
             text-align: center; 
-            box-sizing: border-box; /* 確保 padding 不會撐大容器 */
+            box-sizing: border-box;
         }
         .hidden { display: none; }
         h1 { color: var(--primary); margin-bottom: 10px; }
@@ -45,69 +45,71 @@
         .timer-bar { width: 100%; height: 10px; background: #eee; border-radius: 5px; margin: 15px 0; overflow: hidden; }
         .timer-progress { height: 100%; background: var(--secondary); width: 100%; transition: width 0.1s linear; }
 
-        /* 即時排行榜樣式 (放在下方) */
+        /* 即時排行榜樣式 - 獨立區塊 */
         .leaderboard-section { 
             margin-top: 20px; 
             border-top: 2px dashed #ddd; 
             padding-top: 15px;
-            max-height: 300px; /* 限制高度，避免撐破畫面 */
-            overflow-y: auto;  /* 若超過高度則顯示捲軸 */
+            max-height: 400px; 
+            overflow-y: auto;  
         }
         .leaderboard-title { font-size: 1.2rem; color: var(--primary); font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
         .leaderboard-list { list-style: none; padding: 0; margin: 0; }
         .leaderboard-item { 
             display: flex; 
             justify-content: space-between; 
-            padding: 5px 12px; /* 縮減內距 */
+            padding: 6px 12px; 
             background: #f9f9f9; 
             margin-bottom: 4px; 
             border-radius: 5px; 
-            font-size: 0.85rem; 
+            font-size: 0.9rem; 
         }
         .leaderboard-item.top1 { background: #fff3cd; border: 1px solid #ffeeba; font-weight: bold; }
         
-        /* 題目圖片樣式修正 - 限制最大寬高並保持比例 */
+        /* 圖片樣式修正 */
         img.quiz-img { 
-            max-width: 100%; /* 不超過父容器寬度 */
-            max-height: 250px; /* 限制最大高度 */
-            height: auto; /* 保持原圖比例 */
-            width: auto; /* 保持原圖比例 */
+            max-width: 100%; 
+            max-height: 250px; 
+            height: auto; 
+            width: auto; 
             border-radius: 8px; 
             margin-bottom: 15px; 
-            display: block; /* 消除 margin-bottom 不正確的問題 */
-            margin-left: auto; /* 水平居中 */
-            margin-right: auto; /* 水平居中 */
+            display: block; 
+            margin-left: auto; 
+            margin-right: auto; 
         }
         .feedback { font-weight: bold; margin: 10px 0; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
-    <!-- 1. 登入畫面 -->
-    <div id="login-screen" class="container">
-        <h1>🎮 知識大挑戰</h1>
-        <p>請輸入名字開始即時競技</p>
-        <input type="text" id="username" placeholder="輸入大名...">
-        <br>
-        <button onclick="startGame()">進入遊戲</button>
-    </div>
-
-    <!-- 2. 遊戲畫面 (包含下方排行榜) -->
-    <div id="game-screen" class="container hidden">
-        <div id="quiz-area">
-            <div class="timer-bar"><div id="timer-progress" class="timer-progress"></div></div>
-            <h2 id="question-text">載入題目中...</h2>
-            <div id="image-container"></div>
-            <div id="options-container"></div>
-            <div id="feedback-msg" class="feedback"></div>
-            <button id="next-btn" class="hidden" onclick="showNext()">下一題 ➔</button>
+    <div class="container">
+        <!-- 1. 登入畫面 -->
+        <div id="login-screen">
+            <h1>🎮 知識大挑戰</h1>
+            <p>請輸入名字開始即時競技</p>
+            <input type="text" id="username" placeholder="輸入大名...">
+            <br>
+            <button onclick="startGame()">進入遊戲</button>
         </div>
 
-        <!-- 下方排行榜區域 -->
-        <div class="leaderboard-section">
+        <!-- 2. 遊戲畫面 (平常隱藏) -->
+        <div id="game-screen" class="hidden">
+            <div id="quiz-area">
+                <div class="timer-bar"><div id="timer-progress" class="timer-progress"></div></div>
+                <h2 id="question-text">載入題目中...</h2>
+                <div id="image-container"></div>
+                <div id="options-container"></div>
+                <div id="feedback-msg" class="feedback"></div>
+                <button id="next-btn" class="hidden" onclick="showNext()">下一題 ➔</button>
+            </div>
+        </div>
+
+        <!-- 3. 公用排行榜區域 (首頁與遊戲中都會顯示) -->
+        <div id="common-leaderboard" class="leaderboard-section">
             <div class="leaderboard-title">🏆 即時戰報 (Top 10)</div>
             <ul id="leaderboard-list" class="leaderboard-list">
-                <p style="color: #999;">等待第一位參賽者...</p>
+                <p style="color: #999;">正在連線戰報...</p>
             </ul>
         </div>
     </div>
@@ -123,6 +125,11 @@
         let timer;
         let timeLeft = 10;
 
+        // 頁面載入時立即抓取排行榜
+        window.onload = function() {
+            updateLeaderboard();
+        };
+
         async function startGame() {
             currentUser = document.getElementById('username').value;
             if (!currentUser) return alert("請輸入名字！");
@@ -130,19 +137,20 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             
-            // 抓取並隨機化題目
-            const response = await fetch(API_URL);
-            questions = await response.json();
-            questions.sort(() => Math.random() - 0.5); 
-            
-            updateLeaderboard(); // 遊戲開始先抓一次排行榜
-            showQuestion();
+            // 抓取題目
+            try {
+                const response = await fetch(API_URL);
+                questions = await response.json();
+                questions.sort(() => Math.random() - 0.5); 
+                showQuestion();
+            } catch (e) {
+                alert("抓取題庫失敗，請檢查網址或連線。");
+            }
         }
 
         function showQuestion() {
             if (currentIndex >= questions.length) return finishGame();
             
-            // 重置介面
             document.getElementById('feedback-msg').innerText = "";
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('options-container').classList.remove('hidden');
@@ -151,13 +159,11 @@
             document.getElementById('question-text').innerText = `Q${currentIndex+1}: ${q.question}`;
             
             const imgContainer = document.getElementById('image-container');
-            // 修改圖片顯示方式，確保 max-width 作用在 img 標籤上
             imgContainer.innerHTML = q.image ? `<img src="${q.image}" class="quiz-img" alt="題目圖片">` : "";
 
             const optContainer = document.getElementById('options-container');
             optContainer.innerHTML = "";
             
-            // 隨機化選項
             let shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
             shuffledOptions.forEach(opt => {
                 const btn = document.createElement('button');
@@ -187,10 +193,8 @@
         async function checkAnswer(selected, correct) {
             clearInterval(timer);
             const feedback = document.getElementById('feedback-msg');
-            const optionsContainer = document.getElementById('options-container');
-            const optionButtons = optionsContainer.querySelectorAll('.option-btn');
+            const optionButtons = document.querySelectorAll('.option-btn');
             
-            // 禁用所有選項按鈕，防止重複點擊
             optionButtons.forEach(btn => btn.disabled = true);
             
             if (selected === correct) {
@@ -199,41 +203,41 @@
                 feedback.innerText = `✅ 正確！獲得 ${points} 分`;
                 feedback.style.color = "var(--accent)";
             } else {
-                feedback.innerText = `❌ 錯誤！正確答案是：${correct}`;
+                feedback.innerText = `❌ 錯誤！正確答案：${correct}`;
                 feedback.style.color = "var(--secondary)";
             }
 
-            // 更新分數到後端 (使用 no-cors 模式)
+            // 更新分數
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ name: currentUser, score: score })
             });
 
-            // 答題後不隱藏選項，改為禁用，讓玩家確認自己選了什麼
-            // 但如果畫面太擁擠，可以選擇在 1 秒後隱藏或直接顯示下一題
-            // optionsContainer.classList.add('hidden'); 
-
-            setTimeout(updateLeaderboard, 500); // 延遲一下確保後端已寫入
+            setTimeout(updateLeaderboard, 800); 
             document.getElementById('next-btn').classList.remove('hidden');
         }
 
         async function updateLeaderboard() {
-            const response = await fetch(`${API_URL}?action=getLeaderboard`);
-            const data = await response.json();
-            const list = document.getElementById('leaderboard-list');
-            
-            if (!data || data.length === 0) return;
+            try {
+                const response = await fetch(`${API_URL}?action=getLeaderboard`);
+                const data = await response.json();
+                const list = document.getElementById('leaderboard-list');
+                
+                if (!data || data.length === 0) {
+                    list.innerHTML = "<p>尚無挑戰紀錄</p>";
+                    return;
+                }
 
-            list.innerHTML = data.map((u, i) => `
-                <li class="leaderboard-item ${i === 0 ? 'top1' : ''}">
-                    <span>${i+1}. ${u.name} ${i === 0 ? '👑' : ''}</span>
-                    <span>${u.score} pts</span>
-                </li>
-            `).join('');
+                list.innerHTML = data.map((u, i) => `
+                    <li class="leaderboard-item ${i === 0 ? 'top1' : ''}">
+                        <span>${i+1}. ${u.name} ${i === 0 ? '👑' : ''}</span>
+                        <span>${u.score} pts</span>
+                    </li>
+                `).join('');
+            } catch (e) {
+                console.log("無法獲取排行榜資料");
+            }
         }
 
         function showNext() {
