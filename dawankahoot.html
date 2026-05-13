@@ -124,7 +124,7 @@
         let currentIndex = 0;
         let score = 0;
         let timer;
-        let timeLeft = 10;
+        let timeLeft = 0;
 
         window.onload = function() {
             updateLeaderboard();
@@ -180,19 +180,20 @@
             startTimer();
         }
 
-        function startTimer() {
-            timeLeft = 10;
-            const progress = document.getElementById('timer-progress');
+function startTimer() {
+    timeLeft = 20; // 修改這裡，從 20 開始倒數
+    const progress = document.getElementById('timer-progress');
+    clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft -= 0.1;
+        // 修改百分比計算：(剩餘時間 / 總時間 20) * 100，簡化後為 timeLeft * 5
+        progress.style.width = (timeLeft * 5) + "%"; 
+        if (timeLeft <= 0) {
             clearInterval(timer);
-            timer = setInterval(() => {
-                timeLeft -= 0.1;
-                progress.style.width = (timeLeft * 10) + "%";
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    checkAnswer(null, questions[currentIndex].answer);
-                }
-            }, 100);
+            if (!isAnswering) checkAnswer(null, null, questions[currentIndex].answer);
         }
+    }, 100);
+}
 
         async function checkAnswer(selected, correct) {
             clearInterval(timer);
