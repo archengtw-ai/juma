@@ -11,6 +11,7 @@
             --accent: #26890c;
             --bg: #f2f2f2;
             --white: #ffffff;
+            --progress-bg: #2d9cdb; /* 進度條顏色 */
         }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -36,48 +37,43 @@
         h1 { color: var(--primary); margin-bottom: 10px; }
         input[type="text"] { width: 80%; padding: 12px; margin: 20px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
         button { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px; cursor: pointer; transition: 0.3s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
         
-        .option-btn { display: block; width: 100%; margin: 10px 0; padding: 15px; border: 2px solid var(--primary); background: white; color: var(--primary); font-weight: bold; border-radius: 10px; cursor: pointer; box-sizing: border-box; }
-        .option-btn:hover:not(:disabled) { background: var(--primary); color: white; }
-        
+        /* 答題進度條 (新增) */
+        .quiz-progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+        }
+        .quiz-progress-fill {
+            height: 100%;
+            background-color: var(--progress-bg);
+            width: 0%; /* 初始長度 */
+            transition: width 0.5s ease-in-out;
+        }
+        .quiz-progress-text {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
         /* 倒數計時條 */
-        .timer-bar { width: 100%; height: 10px; background: #eee; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .timer-bar { width: 100%; height: 8px; background: #eee; border-radius: 5px; margin: 10px 0; overflow: hidden; }
         .timer-progress { height: 100%; background: var(--secondary); width: 100%; transition: width 0.1s linear; }
 
-        /* 即時排行榜樣式 - 獨立區塊 */
-        .leaderboard-section { 
-            margin-top: 20px; 
-            border-top: 2px dashed #ddd; 
-            padding-top: 15px;
-            max-height: 400px; 
-            overflow-y: auto;  
-        }
-        .leaderboard-title { font-size: 1.2rem; color: var(--primary); font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
-        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
-        .leaderboard-item { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 6px 12px; 
-            background: #f9f9f9; 
-            margin-bottom: 4px; 
-            border-radius: 5px; 
-            font-size: 0.9rem; 
-        }
+        .option-btn { display: block; width: 100%; margin: 10px 0; padding: 15px; border: 2px solid var(--primary); background: white; color: var(--primary); font-weight: bold; border-radius: 10px; cursor: pointer; box-sizing: border-box; }
+        .option-btn:hover:not(:disabled) { background: var(--primary); color: white; }
+        .option-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* 排行榜與圖片樣式保持不變 */
+        .leaderboard-section { margin-top: 20px; border-top: 2px dashed #ddd; padding-top: 15px; max-height: 400px; overflow-y: auto; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 6px 12px; background: #f9f9f9; margin-bottom: 4px; border-radius: 5px; font-size: 0.9rem; }
         .leaderboard-item.top1 { background: #fff3cd; border: 1px solid #ffeeba; font-weight: bold; }
-        
-        /* 圖片樣式修正 */
-        img.quiz-img { 
-            max-width: 100%; 
-            max-height: 250px; 
-            height: auto; 
-            width: auto; 
-            border-radius: 8px; 
-            margin-bottom: 15px; 
-            display: block; 
-            margin-left: auto; 
-            margin-right: auto; 
-        }
+        img.quiz-img { max-width: 100%; max-height: 250px; height: auto; width: auto; border-radius: 8px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
         .feedback { font-weight: bold; margin: 10px 0; font-size: 1.2rem; }
     </style>
 </head>
@@ -86,15 +82,21 @@
     <div class="container">
         <!-- 1. 登入畫面 -->
         <div id="login-screen">
-            <h1>🎮 115年大琬村第1次段考<br>(可能也是最後一次)</h1>
+            <h1>🎮 115年第1次大琬盃段考 🎮<br>(可能也是最後一次)</h1>
             <p>請輸入名字開始即時競技</p>
-            <input type="text" id="username" placeholder="輸入大名...">
+            <input type="text" id="username" placeholder="輸入考生姓名...">
             <br>
-            <button onclick="startGame()">進入遊戲</button>
+            <button onclick="startGame()">進入考場</button>
         </div>
 
-        <!-- 2. 遊戲畫面 (平常隱藏) -->
+        <!-- 2. 遊戲畫面 -->
         <div id="game-screen" class="hidden">
+            <!-- 新增進度條 -->
+            <div class="quiz-progress-container">
+                <div id="quiz-progress-fill" class="quiz-progress-fill"></div>
+            </div>
+            <div id="quiz-progress-text" class="quiz-progress-text">第 0 / 0 題</div>
+
             <div id="quiz-area">
                 <div class="timer-bar"><div id="timer-progress" class="timer-progress"></div></div>
                 <h2 id="question-text">載入題目中...</h2>
@@ -105,7 +107,7 @@
             </div>
         </div>
 
-        <!-- 3. 公用排行榜區域 (首頁與遊戲中都會顯示) -->
+        <!-- 3. 排行榜區域 -->
         <div id="common-leaderboard" class="leaderboard-section">
             <div class="leaderboard-title">🏆 即時戰報 (Top 10)</div>
             <ul id="leaderboard-list" class="leaderboard-list">
@@ -115,7 +117,6 @@
     </div>
 
     <script>
-        // 請務必替換為你的 GAS URL
         const API_URL = "https://script.google.com/macros/s/AKfycbzmj2KJuaXvLo7iWnNbvhLC1jOTRtUNeVZIZj36kTQ2joWMja7bD3pkfn0IqYipusDTGA/exec"; 
         
         let currentUser = "";
@@ -125,7 +126,6 @@
         let timer;
         let timeLeft = 10;
 
-        // 頁面載入時立即抓取排行榜
         window.onload = function() {
             updateLeaderboard();
         };
@@ -137,7 +137,6 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             
-            // 抓取題目
             try {
                 const response = await fetch(API_URL);
                 questions = await response.json();
@@ -151,12 +150,17 @@
         function showQuestion() {
             if (currentIndex >= questions.length) return finishGame();
             
+            // 更新進度條 (新增部分)
+            const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+            document.getElementById('quiz-progress-fill').style.width = progressPercent + "%";
+            document.getElementById('quiz-progress-text').innerText = `第 ${currentIndex + 1} / ${questions.length} 題`;
+
             document.getElementById('feedback-msg').innerText = "";
             document.getElementById('next-btn').classList.add('hidden');
             document.getElementById('options-container').classList.remove('hidden');
 
             const q = questions[currentIndex];
-            document.getElementById('question-text').innerText = `Q${currentIndex+1}: ${q.question}`;
+            document.getElementById('question-text').innerText = q.question;
             
             const imgContainer = document.getElementById('image-container');
             imgContainer.innerHTML = q.image ? `<img src="${q.image}" class="quiz-img" alt="題目圖片">` : "";
@@ -207,7 +211,6 @@
                 feedback.style.color = "var(--secondary)";
             }
 
-            // 更新分數
             fetch(API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -246,6 +249,8 @@
         }
 
         function finishGame() {
+            // 答完最後一題時，讓進度條填滿
+            document.getElementById('quiz-progress-fill').style.width = "100%";
             alert(`遊戲結束！${currentUser} 的總分是：${score}`);
             location.reload();
         }
